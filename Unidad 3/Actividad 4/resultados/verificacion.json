@@ -1,0 +1,24 @@
+{
+  "equivalencia": [
+    {
+      "particion": "test",
+      "n": 437,
+      "cambios_clase": 0,
+      "max_delta_prob": 5.364418029785156e-07,
+      "accuracy_eager": 1.0,
+      "accuracy_grafo": 1.0
+    },
+    {
+      "particion": "externo",
+      "n": 372,
+      "cambios_clase": 0,
+      "max_delta_prob": 2.86102294921875e-06,
+      "accuracy_eager": 0.6451612903225806,
+      "accuracy_grafo": 0.6451612903225806
+    }
+  ],
+  "error_fuente_manejado": true,
+  "hilos_residuales": [],
+  "segundos_fallo_con_calentamiento": 0.4652723341714591,
+  "gpu_visible": []
+}

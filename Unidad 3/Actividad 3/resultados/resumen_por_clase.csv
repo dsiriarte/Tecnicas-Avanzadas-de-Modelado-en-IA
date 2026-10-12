@@ -1,0 +1,13 @@
+stage,particion,clase,precision,recall,f1-score,support
+congelada,externo,paper,0.5947675292683884,0.9596774193548386,0.7316668531522329,124.0
+congelada,externo,rock,0.6679761898882749,0.8870967741935484,0.7589247467508337,124.0
+congelada,externo,scissors,0.6666666666666666,0.03494623655913976,0.06639264043844194,124.0
+congelada,test,paper,1.0,1.0,1.0,143.0
+congelada,test,rock,1.0,1.0,1.0,144.0
+congelada,test,scissors,1.0,1.0,1.0,150.0
+finetuning,externo,paper,0.4780132920376823,0.989247311827957,0.6413036492861253,124.0
+finetuning,externo,rock,0.8659611992945325,0.7446236559139785,0.7816218868850449,124.0
+finetuning,externo,scissors,0.0,0.0,0.0,124.0
+finetuning,test,paper,1.0,1.0,1.0,143.0
+finetuning,test,rock,1.0,1.0,1.0,144.0
+finetuning,test,scissors,1.0,1.0,1.0,150.0

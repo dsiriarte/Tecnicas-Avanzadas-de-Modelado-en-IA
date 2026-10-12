@@ -1,0 +1,25 @@
+{
+  "wilson_test_437_aciertos": [
+    0.9912860763346294,
+    1.0
+  ],
+  "mayoritaria_accuracy": 0.34324942791762014,
+  "mayoritaria_f1": 0.17035775127768313,
+  "limite_IC": "Wilson orientativo por imagen; no corrige dependencia por sujetos no identificados.",
+  "bootstrap": [
+    {
+      "particion": "test",
+      "delta_accuracy": 0.0,
+      "IC95_inf": 0.0,
+      "IC95_sup": 0.0,
+      "grupos": 437
+    },
+    {
+      "particion": "externo",
+      "delta_accuracy": -0.0492831541218638,
+      "IC95_inf": -0.11740591397849465,
+      "IC95_sup": 0.00985663082437276,
+      "grupos": 12
+    }
+  ]
+}

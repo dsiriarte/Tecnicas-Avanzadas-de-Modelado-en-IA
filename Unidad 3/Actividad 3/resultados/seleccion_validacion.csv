@@ -1,0 +1,7 @@
+stage,seed,f1_macro,accuracy
+congelada,42,0.9976770068192394,0.9977116704805492
+finetuning,42,1.0,1.0
+congelada,7,1.0,1.0
+finetuning,7,1.0,1.0
+congelada,2026,0.9976770068192394,0.9977116704805492
+finetuning,2026,1.0,1.0

@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.cache/
+.keras-cache/
+.gui-packages/
+.DS_Store
+.env
+.env.*
+*.log
+# Descargas originales opcionales; se incluyen los tensores preparados.
+**/datos/real/
+**/datos/cgi_externo/
+**/datos/*.zip

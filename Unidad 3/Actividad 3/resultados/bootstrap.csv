@@ -1,0 +1,3 @@
+particion,delta_accuracy,IC95_inf,IC95_sup,grupos
+test,0.0,0.0,0.0,437
+externo,-0.0492831541218638,-0.11740591397849465,0.00985663082437276,12

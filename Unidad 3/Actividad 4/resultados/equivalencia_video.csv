@@ -1,0 +1,17 @@
+archivo,cuadros,clases_distintas,max_delta_confianza
+cola1_hilos_grafo_r0_frames.csv,904,0,2.205371856689453e-06
+cola1_hilos_grafo_r1_frames.csv,904,0,2.205371856689453e-06
+cola1_hilos_grafo_r2_frames.csv,904,0,2.205371856689453e-06
+sostenido60_hilos_grafo_r0_frames.csv,3616,0,2.205371856689453e-06
+visual_hilos_eager_r0_frames.csv,904,0,0.0
+visual_hilos_eager_r1_frames.csv,904,0,0.0
+visual_hilos_eager_r2_frames.csv,904,0,0.0
+visual_hilos_grafo_r0_frames.csv,904,0,2.205371856689453e-06
+visual_hilos_grafo_r1_frames.csv,904,0,2.205371856689453e-06
+visual_hilos_grafo_r2_frames.csv,904,0,2.205371856689453e-06
+visual_secuencial_eager_r0_frames.csv,904,0,0.0
+visual_secuencial_eager_r1_frames.csv,904,0,0.0
+visual_secuencial_eager_r2_frames.csv,904,0,0.0
+visual_secuencial_grafo_r0_frames.csv,904,0,2.205371856689453e-06
+visual_secuencial_grafo_r1_frames.csv,904,0,2.205371856689453e-06
+visual_secuencial_grafo_r2_frames.csv,904,0,2.205371856689453e-06

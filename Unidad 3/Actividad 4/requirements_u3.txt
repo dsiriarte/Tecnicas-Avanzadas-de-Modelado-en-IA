@@ -1,0 +1,17 @@
+# Python 3.12.11. Entorno nuevo de escritorio; no mezclar con opencv-python-headless.
+tensorflow==2.21.0
+keras==3.15.1
+numpy==2.5.3
+opencv-python==4.14.0.94
+pandas==3.0.5
+scikit-learn==1.9.1
+scipy==1.18.1
+statsmodels==0.15.0
+matplotlib==3.11.2
+pillow==12.3.0
+requests==2.34.2
+psutil==7.2.2
+nbformat==5.11.1
+nbconvert==7.17.1
+ipykernel==7.3.0
+jupyter==1.1.1

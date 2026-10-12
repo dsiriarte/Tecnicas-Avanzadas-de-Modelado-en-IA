@@ -1,0 +1,28 @@
+{
+  "n_original": 2188,
+  "n_limpio": 2188,
+  "excluidos": 0,
+  "grupos": 2185,
+  "pares_similares": 3,
+  "umbral_corr": 0.985,
+  "umbral_dhash": 4,
+  "particiones": {
+    "paper": {
+      "test": 143,
+      "train": 427,
+      "val": 142
+    },
+    "rock": {
+      "test": 144,
+      "train": 437,
+      "val": 145
+    },
+    "scissors": {
+      "test": 150,
+      "train": 450,
+      "val": 150
+    }
+  },
+  "sha256_particiones": "140bd2295f70727ee32f5f5c7a8e355774b7ae1068744c2ea850b08dcfa46c24",
+  "limite": "No existen identificadores de persona o sesión. Agrupar semejanza visual reduce fugas, pero no demuestra independencia entre sujetos."
+}

@@ -1,0 +1,15 @@
+{
+  "comprobaciones": [
+    "Fuente completa, cola 1: 6 ids en orden y finalización completa",
+    "Cancelación simulada, cola 1: no se informa como video completo",
+    "Fuente fallida, cola 1: 20 cierres correctos",
+    "Fuente completa, cola 2: 6 ids en orden y finalización completa",
+    "Cancelación simulada, cola 2: no se informa como video completo",
+    "Fuente fallida, cola 2: 20 cierres correctos"
+  ],
+  "hilos_residuales": 0,
+  "nota": "Pruebas funcionales con fuente, motor y GUI simulados; no son mediciones de rendimiento.",
+  "sha256_version_medida": "013961e2593e0c69de4b3050f5d11fa98126a913e6dc500634aa28372837a71d",
+  "sha256_version_revisada": "768aed88fdcff5f9ec8086ccb6d6373c709120405f377c28e94df79ce15d5c3e",
+  "cambio": "Lectura atómica de errores y comprobación de cancelación/conteo total. Pesos y etapas de procesamiento sin cambios."
+}

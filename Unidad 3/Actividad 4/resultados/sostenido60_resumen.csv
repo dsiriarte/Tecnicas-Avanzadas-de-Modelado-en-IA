@@ -1,0 +1,2 @@
+mode,rep,display,pace,pace_fps,frames,segundos,fps,latencia_media_ms,latencia_p50_ms,latencia_p95_ms,latencia_p99_ms,infer_media_ms,infer_p95_ms,fps_ventana_min,fps_ventana_p05,ventanas_mayor60_pct,cpu_equivalente_pct,rss_max_mb,sin_perdidas,cola_max,opencv
+hilos_grafo,0,True,True,60.0,3616,60.270188541850075,59.996493913224484,16.576540892115954,16.476375167258084,16.872198320925236,17.793984885793172,2.8754095886875173,3.1339589622803032,59.91663349297821,59.95060147765646,58.333333333333336,38.7511306220365,624.28125,True,1,4.14.0

@@ -1,0 +1,9 @@
+{
+  "speedup_cola1": 3.6308169057731416,
+  "min_ventana_cola1": 79.12302933049935,
+  "clases_distintas_video": 0,
+  "max_delta_confianza_video": 2.205371856689453e-06,
+  "cuadros_comparados": 17176,
+  "sha256_video": "0a1c38e5994232956b2c9a7c0ca9d945a1b66bbc37b3bc9b061ce9a87826140f",
+  "sha256_modelo": "8bfb1f7922c59f2e0a707d1aba83c920647247b120379d52a726ea8a8dd741ed"
+}

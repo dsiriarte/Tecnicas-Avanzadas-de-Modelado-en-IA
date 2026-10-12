@@ -1,0 +1,27 @@
+{
+  "arquitectura": "MobileNetV2",
+  "alpha": 0.35,
+  "imagen": 128,
+  "pesos": "ImageNet",
+  "batch": 32,
+  "semillas": [
+    42,
+    7,
+    2026
+  ],
+  "epocas_congelada": 10,
+  "epocas_finetuning": 12,
+  "lr_congelada": 0.001,
+  "lr_finetuning": 0.0001,
+  "paciencia": 4,
+  "fine_desde": "block_13_expand",
+  "seleccion": "Mayor F1-macro medio en validación; empate a 0.001 favorece congelada.",
+  "aumentacion": {
+    "flip": "horizontal",
+    "rotacion_fraccion": 0.05,
+    "traslacion": 0.05,
+    "zoom": 0.1,
+    "contraste": 0.15,
+    "brillo": 0.1
+  }
+}
