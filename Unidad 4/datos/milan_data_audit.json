@@ -1,0 +1,72 @@
+{
+  "files": [
+    {
+      "file": "sms-call-internet-mi-2013-11-04.csv",
+      "rows": 5639488,
+      "missing_internet": 2825506,
+      "unique_timestamps": 144,
+      "start_utc": "2013-11-03T23:00:00+00:00",
+      "end_utc": "2013-11-04T22:50:00+00:00"
+    },
+    {
+      "file": "sms-call-internet-mi-2013-11-05.csv",
+      "rows": 5874140,
+      "missing_internet": 2892580,
+      "unique_timestamps": 144,
+      "start_utc": "2013-11-04T23:00:00+00:00",
+      "end_utc": "2013-11-05T22:50:00+00:00"
+    },
+    {
+      "file": "sms-call-internet-mi-2013-11-06.csv",
+      "rows": 5912097,
+      "missing_internet": 2898786,
+      "unique_timestamps": 144,
+      "start_utc": "2013-11-05T23:00:00+00:00",
+      "end_utc": "2013-11-06T22:50:00+00:00"
+    },
+    {
+      "file": "sms-call-internet-mi-2013-11-07.csv",
+      "rows": 5886883,
+      "missing_internet": 2899176,
+      "unique_timestamps": 144,
+      "start_utc": "2013-11-06T23:00:00+00:00",
+      "end_utc": "2013-11-07T22:50:00+00:00"
+    },
+    {
+      "file": "sms-call-internet-mi-2013-11-08.csv",
+      "rows": 5918856,
+      "missing_internet": 2957866,
+      "unique_timestamps": 144,
+      "start_utc": "2013-11-07T23:00:00+00:00",
+      "end_utc": "2013-11-08T22:50:00+00:00"
+    },
+    {
+      "file": "sms-call-internet-mi-2013-11-09.csv",
+      "rows": 5052416,
+      "missing_internet": 2515947,
+      "unique_timestamps": 144,
+      "start_utc": "2013-11-08T23:00:00+00:00",
+      "end_utc": "2013-11-09T22:50:00+00:00"
+    },
+    {
+      "file": "sms-call-internet-mi-2013-11-10.csv",
+      "rows": 4731582,
+      "missing_internet": 2418119,
+      "unique_timestamps": 144,
+      "start_utc": "2013-11-09T23:00:00+00:00",
+      "end_utc": "2013-11-10T22:50:00+00:00"
+    }
+  ],
+  "total_rows": 39015462,
+  "unique_cells": 10000,
+  "unique_countries": 322,
+  "timestamps": 1008,
+  "interval_counts_ms": {
+    "600000.0": 1007
+  },
+  "missing_internet_total": 19407980,
+  "series_start": "2013-11-03 23:00:00+00:00",
+  "series_end": "2013-11-10 22:50:00+00:00",
+  "series_missing_slots": 0,
+  "duration_sec": 17.1
+}

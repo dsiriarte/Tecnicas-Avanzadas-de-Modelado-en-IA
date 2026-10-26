@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/santiagoiriarte/Documents/Maestria/Tecnicas%20Avanzadas%20de%20Modelado%20en%20IA/Unidad%204/mlruns/466762702121605294/fdef8fe5845241458dd4d8f7740ae66e/artifacts
+end_time: 1792986612235
+entry_point_name: ''
+experiment_id: '466762702121605294'
+lifecycle_stage: active
+run_id: fdef8fe5845241458dd4d8f7740ae66e
+run_name: E3_LSTM_dropout_s2026
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1792986612208
+status: 3
+tags: []
+user_id: santiagoiriarte

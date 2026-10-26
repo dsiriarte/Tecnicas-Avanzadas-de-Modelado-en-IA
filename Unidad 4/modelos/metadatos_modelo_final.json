@@ -1,0 +1,54 @@
+{
+  "dataset": "Telecom Italia Big Data Challenge, SMS-Call-Internet-MI, 2013-11-04 a 2013-11-10, agregado a 10 min",
+  "csv_sha256": "924333a3058a15efa3d424b4e9721a84372e2fd48b90b9d03d1485e463ff1484",
+  "intervalos": 1008,
+  "lookback": 12,
+  "cortes": [
+    705,
+    856
+  ],
+  "ventanas": {
+    "entrenamiento": 693,
+    "validacion": 151,
+    "prueba": 152
+  },
+  "semillas": [
+    42,
+    7,
+    2026
+  ],
+  "seleccion": "R3_GRU_adam_lr0.003_do0.4",
+  "configuracion": {
+    "tipo": "GRU",
+    "entrada": "nivel+cambio+hora",
+    "objetivo": "cambio",
+    "lr": 0.003,
+    "dropout": 0.4,
+    "optimizador": "adam"
+  },
+  "ensamble_de_semillas": true,
+  "escaladores": {
+    "nivel_media": 766099.436554085,
+    "nivel_de": 251096.63096788598,
+    "cambio_media": 317.38527089899236,
+    "cambio_de": 16523.979976384002
+  },
+  "prueba_MAE": {
+    "Persistencia": 9229.8,
+    "Deriva": 6687.4,
+    "Media de ventana": 48978.1,
+    "Ingenuo diario": 44225.5,
+    "Ridge (cambio)": 6686.9,
+    "Ronda 1: E4_GRU": 7369.7,
+    "Mejor LSTM R3": 6022.1,
+    "Seleccionada (final)": 5834.6
+  },
+  "versiones": {
+    "python": "3.12.11",
+    "tensorflow": "2.21.0",
+    "keras": "3.15.1",
+    "scikit-learn": "1.9.1",
+    "numpy": "2.5.3",
+    "pandas": "3.0.5"
+  }
+}

@@ -1,0 +1,9 @@
+artifact_location: file:///Users/santiagoiriarte/Documents/Maestria/Tecnicas%20Avanzadas%20de%20Modelado%20en%20IA/Unidad%204/mlruns/466762702121605294
+creation_time: 1792986590165
+effective_trace_archival_retention: null
+experiment_id: '466762702121605294'
+last_update_time: 1792986590165
+lifecycle_stage: active
+name: U4_Milan_pronostico_10min
+trace_location: null
+workspace: default

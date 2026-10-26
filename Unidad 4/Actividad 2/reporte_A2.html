@@ -1,0 +1,110 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Reporte A2 · Grupo 12</title>
+<link rel="stylesheet" href="../_build/estilo_reporte.css"><style>body{font-size:9.6pt;line-height:1.34}table{break-inside:auto;font-size:8.6pt}tr{break-inside:avoid}.two table{break-inside:avoid}</style></head><body>
+
+<div class="kicker">Unidad 4 · Actividad 2 · Ejecución, optimización y validación comparativa</div>
+<h1>Red recurrente para pronosticar a 10 minutos la actividad de Internet en Milán</h1>
+<div class="author">David Santiago Iriarte Zamora y Jose Adrian Trochez Cuellar · Grupo 12</div>
+<p class="small"><b>Código, notebook ejecutado, pesos y registro MLflow:</b> <a href="https://github.com/dsiriarte/Tecnicas-Avanzadas-de-Modelado-en-IA/tree/main/Unidad%204">github.com/dsiriarte/Tecnicas-Avanzadas-de-Modelado-en-IA/tree/main/Unidad 4</a> (notebook <code>notebooks/U4_pronostico_internet_milan.ipynb</code>).</p>
+
+<h2>1. Problema, datos y protocolo</h2>
+<p>Queremos pronosticar la actividad de Internet de Milán en el siguiente intervalo de 10 minutos. Usamos la primera semana del Telecom Italia Big Data Challenge (Barlacchi et al., 2015; licencia ODbL): 39.015.462 registros de 10.000 celdas, del 4 al 10 de noviembre de 2013. En cada marca de tiempo sumamos la columna <code>internet</code> de todas las celdas. El 49,7 % de los registros no tiene ese valor y no lo reemplazamos por cero. El resultado es una serie continua de 1.008 intervalos (<code>internet_sum</code>), que es un índice de actividad y no un volumen en bytes.</p>
+<p>Partimos la serie en orden cronológico, 70/15/15, con los mismos cortes del avance (intervalos 705 y 856). Quedan 693 ventanas de entrenamiento (lunes a viernes), 151 de validación (sábado) y 152 de prueba (domingo). Los escaladores se ajustan solo con entrenamiento. Todas las decisiones se toman en validación, con la media de tres semillas (42, 7 y 2026) y <code>enable_op_determinism</code>.</p>
+<div class="callout"><b>Resultado principal.</b> En prueba, la GRU que predice el cambio respecto al último valor tiene un MAE de 5.835, frente a 9.230 de la persistencia. Es una reducción de <b>36,8 %</b> (IC 95 % [−5.503; −902]; Diebold-Mariano, p &lt; 0,001). También mejora a una regresión Ridge con las mismas entradas (−12,7 %, p &lt; 0,001). Frente a la deriva, una línea base sin entrenamiento más exigente, la mejora es de 12,8 %, pero no es significativa (p = 0,06).</div>
+<figure><img src="../salidas/fig1_serie_particion.png" style="max-height:215px"><figcaption>Figura 1. Serie agregada y registros válidos por intervalo (hora local). Amarillo: validación (sábado); rojo: prueba (domingo). La actividad sigue a la cobertura (r = 0,88).</figcaption></figure>
+
+<h2>2. Pipeline e implementación de la red</h2>
+<div class="flow">
+<div class="box"><b>Carga verificada</b>SHA-256 del CSV, 1.008 intervalos sin huecos, hora local</div>
+<div class="box"><b>Partición</b>cronológica: 693 / 151 / 152 ventanas sin objetivos compartidos</div>
+<div class="box"><b>Escalado</b>nivel y cambio con <code>StandardScaler</code> ajustado en entrenamiento</div>
+<div class="box"><b>Ventana 12 × 4</b>nivel, cambio, seno y coseno de la hora</div>
+<div class="box"><b>Red</b>GRU(32), Dropout y Dense(1); predice el cambio escalado</div>
+<div class="box"><b>Pronóstico</b>último valor más el cambio previsto, promedio de 3 semillas</div>
+</div>
+<p>Implementamos el pipeline en TensorFlow/Keras 2.21. Cada entrada tiene forma (12, c): 12 pasos equivalen a 2 horas, tiempo suficiente para ver la pendiente de una subida o una bajada. Un <code>assert</code> comprueba que ninguna ventana de validación o prueba tenga su objetivo en otra partición y que la transformación inversa recupere la serie original. La tabla 1 resume y justifica cada capa.</p>
+<table><thead><tr><th>Capa</th><th>Configuración final</th><th>Justificación</th></tr></thead><tbody>
+<tr><td>Entrada</td><td>(12, 4)</td><td>Nivel escalado, cambio escalado y hora local en seno y coseno, para que 23:50 y 00:00 queden cerca. La hora solo ayuda cuando el objetivo es el cambio (sección 3).</td></tr>
+<tr><td>GRU</td><td>32 unidades, 3.648 parámetros</td><td>Resume la ventana en un estado oculto con compuertas de actualización y reinicio. Tiene 23 % menos parámetros que la LSTM equivalente (4.769) y le ganó en las cuatro combinaciones de la ronda 2. Con 693 ventanas, el modelo completo (3.681 parámetros) tiene unos 5 parámetros por ejemplo.</td></tr>
+<tr><td>Dropout</td><td>p = 0,4</td><td>Regulariza el estado final. En la búsqueda, el error bajó a medida que subimos el <i>dropout</i> (0: 6.117; 0,4: 5.937).</td></tr>
+<tr><td>Dense</td><td>1 neurona lineal</td><td>Salida de regresión sin límites, porque el cambio puede ser positivo o negativo.</td></tr>
+<tr><td>Objetivo</td><td>y<sub>t</sub> − y<sub>t−1</sub>, escalado</td><td>La desviación del cambio es 15 veces menor que la del nivel (16.524 frente a 251.097). Si la red predice el nivel, tiene que acertar un valor cercano a 800 mil para estimar un cambio de unos 8 mil. Con el cambio como objetivo, la persistencia es el caso en que la red predice cero.</td></tr>
+<tr><td>Entrenamiento</td><td>MSE, Adam (lr = 0,003), lote 32</td><td>Hasta 150 épocas, con <code>EarlyStopping</code> (paciencia 15, recupera los mejores pesos) y <code>ReduceLROnPlateau</code> (factor 0,5, paciencia 6) sobre la pérdida de validación. Las 147 redes tuvieron este mismo presupuesto.</td></tr>
+</tbody></table>
+
+<h2>3. Optimización controlada de hiperparámetros</h2>
+<p>Seguimos el enfoque científico de ajuste de Google Developers (s. f.). En cada ronda cambiamos pocos factores a la vez. Distinguimos dos tipos de hiperparámetros: los <b>científicos</b>, que son los que queremos comparar (la celda y el objetivo), y los <b>de ruido</b> (tasa de aprendizaje, <i>dropout</i> y optimizador), que ajustamos para cada celda antes de compararlas. Registramos las 150 corridas en MLflow, con parámetros, métricas, pérdidas por época y artefactos, y en <code>salidas/experimentos.csv</code>.</p>
+<table><thead><tr><th>Ronda y factor cambiado</th><th>Configuración</th><th class="n">MAE val.</th><th class="n">DE semillas</th><th class="n">vs. persist.</th></tr></thead><tbody>
+<tr><td colspan="5"><i>Líneas base en validación:</i> persistencia 9.147 · deriva 7.612 · Ridge (cambio, α = 100) 5.875</td></tr>
+<tr><td>R1 · referencia del avance</td><td>E1 LSTM, Adam, lr 0,001, p 0,2 (nivel)</td><td class="n">10.703</td><td class="n">1.682</td><td class="n">+17,0 %</td></tr>
+<tr><td>R1 · solo lr</td><td>E2 lr 0,0005</td><td class="n">12.194</td><td class="n">1.209</td><td class="n">+33,3 %</td></tr>
+<tr><td>R1 · solo <i>dropout</i></td><td>E3 p 0,3</td><td class="n">10.669</td><td class="n">730</td><td class="n">+16,6 %</td></tr>
+<tr><td>R1 · solo celda</td><td>E4 GRU</td><td class="n">6.727</td><td class="n">740</td><td class="n">−26,5 %</td></tr>
+<tr><td>R1 · solo optimizador</td><td>E5 RMSprop</td><td class="n">7.484</td><td class="n">581</td><td class="n">−18,2 %</td></tr>
+<tr><td>R2 · objetivo</td><td>GRU, objetivo = cambio, entrada = nivel</td><td class="n">6.366</td><td class="n">51</td><td class="n">−30,4 %</td></tr>
+<tr><td>R2 · objetivo y entradas</td><td>GRU, cambio, nivel + cambio + hora</td><td class="n">5.844</td><td class="n">299</td><td class="n">−36,1 %</td></tr>
+<tr><td>R2 · entradas sin cambiar objetivo</td><td>GRU, nivel, nivel + cambio + hora</td><td class="n">30.153</td><td class="n">10.888</td><td class="n">+229,7 %</td></tr>
+<tr><td>R3 · mejor LSTM de la malla</td><td>Adam, lr 0,0003, p 0</td><td class="n">5.780</td><td class="n">280</td><td class="n">−36,8 %</td></tr>
+<tr class="best"><td>R3 · mejor GRU (seleccionada)</td><td>Adam, lr 0,003, p 0,4</td><td class="n">5.653</td><td class="n">148</td><td class="n">−38,2 %</td></tr>
+</tbody></table>
+<p class="small">Tabla 2. MAE de validación, media de 3 semillas. R2 es un factorial 2 × 2 × 2 (celda × objetivo × entrada) con los valores por defecto. R3 es una malla completa de 36 configuraciones: lr {0,0003; 0,001; 0,003} × <i>dropout</i> {0; 0,2; 0,4} × {Adam, RMSprop} × {LSTM, GRU}.</p>
+<figure><img src="../salidas/fig3_malla_hiperparametros.png" style="max-height:170px"><figcaption>Figura 2. Ronda 3: MAE de validación (miles) por tasa de aprendizaje y <i>dropout</i>, para cada celda y optimizador.</figcaption></figure>
+<p><b>Ronda 1.</b> Con el objetivo de nivel, el resultado depende mucho de la celda y del optimizador, y tres de las cinco configuraciones del avance quedan peor que la persistencia. Bajar la tasa de aprendizaje empeora el error (E2: 12.194 frente a 10.703), aunque la red entrena más épocas (42 frente a 33).</p>
+<p><b>Ronda 2.</b> Al predecir el cambio, todas las celdas mejoran y la desviación entre semillas baja de 740-1.682 a 51-120. Las variables de hora solo sirven con este objetivo. Si la red predice el nivel con esas variables, aprende el perfil de lunes a viernes y falla el sábado (MAE 30.153).</p>
+<p><b>Ronda 3.</b> La tasa de aprendizaje es el factor con más efecto: el MAE medio es 5.861 con 0,0003 y 6.249 con 0,003. El error baja a medida que aumenta el <i>dropout</i>, y el optimizador casi no cambia el resultado (Adam 6.018; RMSprop 6.043). Las cinco mejores configuraciones están dentro de una desviación estándar entre semillas (5.653-5.760), así que la conclusión firme es la combinación GRU, <i>dropout</i> 0,4 y objetivo de cambio, más que un valor exacto de lr. La regla de selección, fijada antes de entrenar, fue el menor MAE medio de validación, y eligió lr = 0,003. Promediar las tres semillas bajó el MAE de validación de 5.653 a 5.599; por eso el modelo final es ese promedio.</p>
+
+<h2>4. Curvas de aprendizaje</h2>
+<figure><img src="../salidas/fig2_curvas_aprendizaje.png" style="max-height:290px"><figcaption>Figura 3. Arriba: pérdida MSE escalada (escala logarítmica). Abajo: MAE en unidades originales. Línea continua: entrenamiento; discontinua: validación; una línea por semilla. Las líneas punteadas horizontales son la persistencia y la deriva en validación, y las verticales marcan la mejor época.</figcaption></figure>
+<p><b>Objetivo de nivel (E4).</b> La pérdida de entrenamiento queda unas 12 veces por encima de la de validación (cociente 0,08-0,09). No se trata de subajuste: el <i>dropout</i> altera un estado que debe representar un nivel cercano a 800 mil, y ese ruido infla la pérdida de entrenamiento. La mejor época cambia mucho con la semilla (entre 22 y 53) y la tasa de aprendizaje termina entre 1,6e-05 y 1,3e-04 después de varias reducciones. Es un entrenamiento lento y poco estable.</p>
+<p><b>Objetivo de cambio (modelo seleccionado).</b> La pérdida de validación llega a su mínimo en la época 2 con las tres semillas. Después sigue bajando la de entrenamiento y sube la de validación, que es el comienzo del sobreajuste. <code>EarlyStopping</code> recupera los pesos de la época 2 y detiene el entrenamiento en la 17. La pérdida de validación queda por debajo de la de entrenamiento (cociente 0,41-0,47) por dos razones. La primera es que el <i>dropout</i> de 0,4 solo actúa durante el entrenamiento. La segunda es que el sábado tiene cambios más pequeños: la desviación es 11.433 frente a 16.505 y la varianza queda en el 48 % de la de entrenamiento. Si medimos sin <i>dropout</i> con los pesos recuperados, el R² del cambio es 0,64 en entrenamiento y 0,60 en validación. En la época elegida no hay sobreajuste. E4, en cambio, solo explica el 30 % y el 45 % de la varianza del cambio.</p>
+<p><b>La misma red con lr = 0,0003.</b> Converge más despacio (mínimo entre las épocas 5 y 15), con curvas más suaves, y llega a un MAE casi igual (5.744). La tasa alta llega antes al mínimo; dentro de la variación entre semillas, las dos opciones son equivalentes.</p>
+
+<h2>5. Validación comparativa en prueba</h2>
+<p>Evaluamos la prueba una sola vez, con la configuración ya elegida y con las mismas 152 ventanas para todos los modelos. El avance ya había usado la prueba con E5 (MAE 9.906, peor que la persistencia). Para no ajustar el diseño a esa partición, en esta versión todas las decisiones se tomaron en validación.</p>
+<p>Para comparar la GRU con cada línea base usamos la diferencia del error absoluto en cada ventana, d<sub>t</sub> = |e<sub>red,t</sub>| − |e<sub>base,t</sub>|, cuyo promedio es la diferencia de MAE. Como los errores de una serie de tiempo están autocorrelacionados, calculamos su IC 95 % con <i>bootstrap</i> de bloques móviles (bloques de 12 pasos, 5.000 réplicas). Además aplicamos la prueba de Diebold y Mariano (1995), DM = d̄ / √(V̂<sub>NW</sub>/n), con varianza de Newey-West de 5 rezagos y la corrección de Harvey, Leybourne y Newbold.</p>
+<div class="two"><div>
+<table><thead><tr><th>Modelo (prueba, domingo)</th><th class="n">MAE</th><th class="n">RMSE</th><th class="n">MAPE</th><th class="n">vs. persist.</th></tr></thead><tbody>
+<tr><td>Persistencia (línea base)</td><td class="n">9.230</td><td class="n">11.584</td><td class="n">1,6 %</td><td class="n">—</td></tr>
+<tr><td>Deriva</td><td class="n">6.687</td><td class="n">8.944</td><td class="n">1,0 %</td><td class="n">−27,5 %</td></tr>
+<tr><td>Media de ventana</td><td class="n">48.978</td><td class="n">60.887</td><td class="n">8,7 %</td><td class="n">+430,6 %</td></tr>
+<tr><td>Ingenuo diario</td><td class="n">44.226</td><td class="n">58.200</td><td class="n">7,5 %</td><td class="n">+379,2 %</td></tr>
+<tr><td>Ridge (cambio)</td><td class="n">6.687</td><td class="n">8.306</td><td class="n">1,1 %</td><td class="n">−27,6 %</td></tr>
+<tr><td>Ronda 1: E4 GRU (nivel)</td><td class="n">7.370</td><td class="n">10.194</td><td class="n">1,1 %</td><td class="n">−20,2 %</td></tr>
+<tr><td>Mejor LSTM (R3)</td><td class="n">6.022</td><td class="n">7.667</td><td class="n">1,0 %</td><td class="n">−34,8 %</td></tr>
+<tr class="best"><td>GRU seleccionada</td><td class="n">5.835</td><td class="n">7.364</td><td class="n">1,0 %</td><td class="n">−36,8 %</td></tr>
+</tbody></table></div><div>
+<table><thead><tr><th>GRU frente a</th><th class="n">ΔMAE</th><th class="n">IC 95 %</th><th class="n">p (DM)</th><th class="n">gana</th></tr></thead><tbody>
+<tr class="best"><td>Persistencia</td><td class="n">−3.395</td><td class="n">[−5.503; −902]</td><td class="n">&lt; 0,001</td><td class="n">69 %</td></tr>
+<tr><td>Ridge (cambio)</td><td class="n">−852</td><td class="n">[−1.453; −508]</td><td class="n">&lt; 0,001</td><td class="n">70 %</td></tr>
+<tr><td>Deriva</td><td class="n">−853</td><td class="n">[−1.687; +205]</td><td class="n">0,06</td><td class="n">52 %</td></tr>
+<tr><td>E4 de la ronda 1</td><td class="n">−1.535</td><td class="n">[−3.233; +40]</td><td class="n">0,05</td><td class="n">55 %</td></tr>
+</tbody></table>
+<p class="small">«Gana» es el porcentaje de las 152 ventanas en que la GRU tiene menor error absoluto. Por separado, las tres semillas dan MAE de 5.560, 5.645 y 6.420 (5.875 ± 474); el promedio de las tres es mejor que la media individual.</p></div></div>
+<p>Frente a la persistencia, que es la línea base del avance, la GRU reduce el MAE en 36,8 %, el RMSE en 36,4 % y el MAPE de 1,6 % a 1,0 %, y el intervalo de confianza queda lejos de cero. Frente a Ridge, que usa las mismas entradas y el mismo objetivo, la ventaja de 12,7 % también es significativa. Esto indica que la red aporta algo más que la nueva formulación del problema.</p>
+<p>Frente a la deriva, la diferencia es de 853 (12,8 %), pero el intervalo incluye el cero. Con un solo día de prueba no podemos afirmar que la red supere a una regla sin entrenamiento que repite el último cambio.</p>
+<p>El MAE de validación (5.599) y el de prueba (5.835) difieren en 4 %, así que la selección no quedó ajustada a la validación. En la ronda 1, E4 ya supera a la persistencia en prueba (7.370), algo que E5 no logró en el avance. Parte de la mejora viene entonces del protocolo común (más paciencia, ventanas mezcladas en cada época y tres semillas), y no solo del cambio de objetivo.</p>
+
+<h2>6. Análisis de errores</h2>
+<figure><img src="../salidas/fig5_errores_prueba.png" style="max-height:270px"><figcaption>Figura 4. Prueba (domingo). Arriba: serie real, GRU y persistencia. Centro: residuos. Abajo: MAE por franja horaria local.</figcaption></figure>
+<table><thead><tr><th>Tercil del cambio real |y<sub>t</sub> − y<sub>t−1</sub>|</th><th class="n">GRU</th><th class="n">Persistencia</th><th class="n">Deriva</th><th>Lectura</th></tr></thead><tbody>
+<tr><td>Estable (tercil bajo)</td><td class="n">5.213</td><td class="n">2.514</td><td class="n">5.674</td><td>Si la serie casi no cambia, la persistencia acierta; la red predice un cambio que no ocurre.</td></tr>
+<tr><td>Medio</td><td class="n">5.180</td><td class="n">7.935</td><td class="n">6.258</td><td>La red gana a las dos.</td></tr>
+<tr><td>Rampa (tercil alto)</td><td class="n">7.098</td><td class="n">17.215</td><td class="n">8.121</td><td>La red reduce el error en 59 % frente a la persistencia; aquí está casi toda la mejora.</td></tr>
+</tbody></table>
+<p>La red gana en la madrugada (0-6 h: 3.883 frente a 9.815) y en la caída de la noche (21-24 h: 7.058 frente a 11.784), cuando la actividad sube o baja de forma sostenida. Pierde entre las 12 y las 15 h (6.899 frente a 5.841), cuando la actividad del domingo se mantiene casi plana.</p>
+<p>El residuo medio es −2.633, es decir, la red sobrestima la actividad del domingo. Entrenó solo con días laborales y el nivel medio de la prueba (642 mil) es 17 % más bajo que el de entrenamiento (771 mil). Cuatro de los cinco errores más grandes son sobrestimaciones; el mayor (−27.766) ocurre el sábado a las 23:40, durante la caída nocturna.</p>
+<p>La prueba de Ljung-Box no rechaza la independencia de los residuos (p = 0,79, 0,28 y 0,21 en los rezagos 1, 6 y 12): la red aprovecha la estructura de corto plazo que hay en la ventana. El percentil 95 del error baja de 21.839 con la persistencia a 13.872, y la correlación entre el error absoluto y la cobertura es baja (0,19).</p>
+
+<h2>7. Costos, limitaciones y oportunidades de mejora</h2>
+<p><b>Costos.</b> Las 147 redes de la búsqueda se entrenaron en 4,4 minutos de CPU (1,6 s por red en la ronda 3). La inferencia tarda 0,18 ms por ventana y por modelo, y el modelo final usa tres. Son costos bajos, aunque no nulos: la persistencia y la deriva no necesitan entrenamiento, datos históricos ni mantenimiento.</p>
+<p><b>Limitaciones.</b> (1) Solo hay una semana de datos: entrenamos con días laborales y evaluamos un sábado y un domingo. Esto explica el sesgo, pero no permite medir la variación entre semanas. (2) La prueba es un único bloque de 152 ventanas, de modo que el intervalo de confianza refleja la incertidumbre dentro de ese día y no entre días. (3) El avance ya había usado la prueba; ninguna decisión de esta versión la usó, pero ya no es una partición sin ver. (4) El índice depende de la cobertura (r = 0,88) y no mide tráfico absoluto. (5) Solo evaluamos el horizonte de 10 minutos.</p>
+<p><b>Oportunidades de mejora.</b> (1) Validar con origen móvil (<code>TimeSeriesSplit</code>; Scikit-learn Developers, s. f.) sobre varias semanas del mismo conjunto de datos, que cubre noviembre y diciembre de 2013, para estimar la variación entre días. (2) Agregar el día de la semana y la cobertura como entradas, para corregir el sesgo del fin de semana. (3) Combinar la red con la persistencia según el régimen, porque cada una gana en un tercil distinto. (4) Pronosticar varios pasos adelante y por celda, donde la persistencia pierde más.</p>
+
+<div class="refs"><h2>Referencias</h2>
+<p>Barlacchi, G., De Nadai, M., Larcher, R., Casella, A., Chitic, C., Torrisi, G., Antonelli, F., Vespignani, A., Pentland, A., &amp; Lepri, B. (2015). A multi-source dataset of urban life in the city of Milan and the Province of Trentino. <i>Scientific Data, 2</i>, 150055. https://doi.org/10.1038/sdata.2015.55</p>
+<p>Diebold, F. X., &amp; Mariano, R. S. (1995). Comparing predictive accuracy. <i>Journal of Business &amp; Economic Statistics, 13</i>(3), 253-263. https://doi.org/10.1080/07350015.1995.10524599</p>
+<p>Goodfellow, I., Bengio, Y., &amp; Courville, A. (2016). <i>Deep learning</i>. MIT Press. https://www.deeplearningbook.org/</p>
+<p>Google Developers. (s. f.). <i>A scientific approach to improving model performance</i>. https://developers.google.com/machine-learning/guides/deep-learning-tuning-playbook/scientific</p>
+<p>MLflow Project. (s. f.). <i>MLflow Tracking</i>. https://mlflow.org/docs/latest/ml/tracking/</p>
+<p>Scikit-learn Developers. (s. f.). <i>Cross-validation: evaluating estimator performance</i>. https://scikit-learn.org/stable/modules/cross_validation.html</p>
+</div>
+</body></html>
